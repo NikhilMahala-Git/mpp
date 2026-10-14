@@ -1,8 +1,6 @@
 #ifndef _MPP_LIB_STRING_HPP_
 #define _MPP_LIB_STRING_HPP_
 #include "./defs.hpp"
-#include "./log.hpp"
-#include "./type_traits.hpp"
 
 // TODO
 // - String comparision operators

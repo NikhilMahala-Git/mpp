@@ -1,6 +1,5 @@
 #include "./string.hpp"
-#include "./log.hpp"
-#include "./lib.hpp"
+#include "./generic_utility.hpp"
 
 MPP_LIB_NAMESPACE_BEGIN
 

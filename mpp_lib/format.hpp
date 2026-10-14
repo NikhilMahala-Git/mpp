@@ -2,7 +2,8 @@
 #define _MPP_LIB_FORMAT_HPP_
 #include "./defs.hpp"
 #include "./string.hpp"
-#include "./lib.hpp"
+#include "./generic_utility.hpp"
+#include "./type_traits.hpp"
 
 MPP_LIB_NAMESPACE_BEGIN
 

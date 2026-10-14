@@ -12,44 +12,6 @@
  * PackageLicenseDeclared: CC0-1.0
  */
 
-// /* configuration */
-// #include <stdint.h>
-// #include <stddef.h>
-// 
-// extern void *mbed_sbrk(intptr_t increment);
-// 
-// // #define LACKS_UNISTD_H
-// // #define LACKS_FCNTL_H
-// // #define LACKS_SYS_PARAM_H
-// #define stderr 0
-// #define HAVE_MORECORE 1
-// // #define MORECORE mbed_sbrk
-// #define MORECORE_CONTIGUOUS 1
-// #define MORECORE_CANNOT_TRIM 1
-// // #define USE_DL_PREFIX
-// // #define LACKS_TIME_H
-// 
-// #if defined(__ARMCC_VERSION)
-// #define LACKS_SYS_TYPES_H
-// #include <string.h>
-// #endif
-// 
-// #define HAVE_MMAP 0
-// #define HAVE_MREMAP 0
-// 
-// #define NO_MALLINFO 1
-// #define NO_MALLOC_STATS 1
-// 
-// // #define DEFAULT_GRANULARITY 64
-// 
-// /* end configuration*/
-
-void* memset_dlmalloc(void* s, int c, size_t n);
-#define memset memset_dlmalloc
-
-void* memcpy_dlmalloc(void* dest, const void* src, size_t n);
-#define memcpy memcpy_dlmalloc
-
 /*
   This is a version (aka dlmalloc) of malloc/free/realloc written by
   Doug Lea and released to the public domain, as explained at
@@ -572,6 +534,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
   disable, set to MAX_SIZE_T. This may lead to a very slight speed
   improvement at the expense of carrying around more memory.
 */
+
+#include "../generic_utility.hpp"
 
 /* Version identifier to allow people to support multiple versions */
 #ifndef DLMALLOC_VERSION
@@ -4846,7 +4810,7 @@ void* dlcalloc(size_t n_elements, size_t elem_size) {
   }
   mem = dlmalloc(req);
   if (mem != 0 && calloc_must_clear(mem2chunk(mem)))
-    memset(mem, 0, req);
+    Platform::memset(mem, 0, req);
   return mem;
 }
 
@@ -5083,7 +5047,7 @@ static void** ialloc(mstate m,
   assert(!is_mmapped(p));
 
   if (opts & 0x2) {       /* optionally clear the elements */
-    memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
+    Platform::memset((size_t*)mem, 0, remainder_size - SIZE_T_SIZE - array_size);
   }
 
   /* If not provided, allocate the pointer array as final part of chunk */
@@ -5265,7 +5229,7 @@ void* dlrealloc(void* oldmem, size_t bytes) {
         mem = internal_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
-          memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
+          Platform::memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
           internal_free(m, oldmem);
         }
       }
@@ -5448,7 +5412,7 @@ static mstate init_user_mstate(char* tbase, size_t tsize) {
   mchunkptr mn;
   mchunkptr msp = align_as_chunk(tbase);
   mstate m = (mstate)(chunk2mem(msp));
-  memset(m, 0, msize);
+  Platform::memset(m, 0, msize);
   (void)INITIAL_LOCK(&m->mutex);
   msp->head = (msize|INUSE_BITS);
   m->seg.base = m->least_addr = tbase;
@@ -5775,7 +5739,7 @@ void* mspace_calloc(mspace msp, size_t n_elements, size_t elem_size) {
   }
   mem = internal_malloc(ms, req);
   if (mem != 0 && calloc_must_clear(mem2chunk(mem)))
-    memset(mem, 0, req);
+    Platform::memset(mem, 0, req);
   return mem;
 }
 
@@ -5815,7 +5779,7 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
         mem = mspace_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
-          memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
+          Platform::memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
           mspace_free(m, oldmem);
         }
       }
@@ -6330,5 +6294,3 @@ History:
          structure of old version,  but most details differ.)
 
 */
-#undef memset
-#undef memcpy

@@ -1,8 +1,9 @@
-#include "./window.hpp"
+#include "../module.window.hpp"
 #if PROJECT_PLATFORM != PROJECT_PLATFORM_WEB
-#include "../vendor/raylib/include/raylib.h"
+#include "raylib.h"
+// #include "../../vendor/raylib/include/raylib.h"
 
-MPP_LIB_NAMESPACE_BEGIN
+PLATFORM_NAMESPACE_BEGIN
 
 uint32_t resource_width;
 uint32_t resource_height;
@@ -40,5 +41,6 @@ void put_pixel_buffer() {
     EndDrawing();
 }
 
-MPP_LIB_NAMESPACE_END
+PLATFORM_NAMESPACE_END
+
 #endif // PROJECT_PLATFORM != PROJECT_PLATFORM_WEB

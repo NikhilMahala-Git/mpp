@@ -1,0 +1,12 @@
+#ifndef _PLATFORM_LOG_MODULE_HPP_
+#define _PLATFORM_LOG_MODULE_HPP_
+#include "./defs.hpp"
+
+PLATFORM_NAMESPACE_BEGIN
+
+PROJECT_PLATFORM_IMPORT_METHOD(Log, Log)
+void log(const char *message);
+
+PLATFORM_NAMESPACE_END
+
+#endif // _PLATFORM_LOG_MODULE_HPP_

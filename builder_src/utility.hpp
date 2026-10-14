@@ -7,6 +7,7 @@
 #include <format>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #if defined(__linux__)
@@ -137,6 +138,52 @@ namespace Builder::Fs {
             return false;
         }
         return _result;
+    }
+
+    inline bool is_executable_file(const std::filesystem::path& p) {
+        if (!std::filesystem::exists(p) || std::filesystem::is_directory(p)) {
+            return false;
+        }
+
+        // On POSIX, check owner, group, or others execution permissions
+        // On Windows, std::filesystem::exists is generally enough for binaries (.exe/.bat)
+        auto perms = std::filesystem::status(p).permissions();
+        return (perms & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ||
+            (perms & std::filesystem::perms::group_exec) != std::filesystem::perms::none ||
+            (perms & std::filesystem::perms::others_exec) != std::filesystem::perms::none;
+    }
+
+    inline std::filesystem::path find_executable(const std::string& name) {
+#if defined(_WIN32)
+#   define PATH_SEPARATOR ';'
+#else
+#   define PATH_SEPARATOR ':'
+#endif
+        // Step 1: Check the PATH environment variable
+        const char* path_env = std::getenv("PATH");
+        if (path_env != nullptr) {
+            std::stringstream ss(path_env);
+            std::string item;
+
+            // Split the PATH variable by the OS-specific separator
+            while (std::getline(ss, item, PATH_SEPARATOR)) {
+                std::filesystem::path potential_path = std::filesystem::path(item) / name;
+
+                if (is_executable_file(potential_path)) {
+                    return potential_path; // Found in PATH!
+                }
+            }
+        }
+
+        // Step 2: If not found in PATH, treat it as a direct file path
+        std::filesystem::path direct_path(name);
+        if (is_executable_file(direct_path)) {
+            return std::filesystem::absolute(direct_path); // Found as a local/absolute file!
+        }
+
+        // Return empty path if it doesn't exist or isn't executable anywhere
+        return {};
+#undef PATH_SEPARATOR
     }
 }
 

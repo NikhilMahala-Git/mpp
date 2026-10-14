@@ -1,24 +1,8 @@
-/*
- * dlamalloc.c - dlmalloc 2.8.6 adapter for bare Clang wasm32.
- *
- * Vendor Doug Lea's upstream source as dlmalloc_upstream.c next to this file.
- * Compile this translation unit ONLY for wasm32 with Clang.
- *
- * This adapter assumes wasm-ld, a single-threaded wasm instance, and that no
- * other component independently manages/grows the allocator's heap. The
- * linker-provided __heap_base keeps the allocator from wasting the initial
- * memory or overlapping the static data/stack reservation.
- */
-
-#if !defined(__clang__) || !defined(__wasm32__)
-# error "dlamalloc.c is only for Clang's wasm32 target"
-#endif
-
-#include <stddef.h>
-#include <stdint.h>
+#include "../generic_utility.hpp"
+// TODO: I don't know what is going on here. The code is AI generated.
+//       Learn and implement what they would call shared memory or things like that.
 
 #define WASM_PAGE_SIZE ((size_t)65536u)
-
 /* dlmalloc's MORECORE-style interface. */
 static void *wasm_morecore(ptrdiff_t increment);
 
@@ -59,64 +43,11 @@ static void *wasm_morecore(ptrdiff_t increment);
 /* Keep dlmalloc's segment granularity aligned with wasm memory pages. */
 #define DEFAULT_GRANULARITY WASM_PAGE_SIZE
 
-void* memset_dlmalloc(void* s, int c, size_t n) {
-    // MPP_MACRO_ASSERT(s != nullptr, "memset: target buffer cannot be null");
-
-    auto* p = static_cast<unsigned char*>(s);
-    unsigned char byte_value = static_cast<unsigned char>(c);
-
-    // Optimization: Broadcast the single byte across a full word width block
-    // e.g., if c = 0xAA, word_value becomes 0xAAAAAAA...
-    size_t word_value = 0;
-    for (size_t i = 0; i < sizeof(size_t); ++i) {
-        word_value = (word_value << 8) | byte_value;
-    }
-
-    // Fill by word chunks
-    while (n >= sizeof(size_t)) {
-        *reinterpret_cast<size_t*>(p) = word_value;
-        p += sizeof(size_t);
-        n -= sizeof(size_t);
-    }
-
-    // Fill remaining trailing bytes
-    while (n > 0) {
-        *p++ = byte_value;
-        n--;
-    }
-
-    return s;
-}
-
-void* memcpy_dlmalloc(void* dest, const void* src, size_t n) {
-    // MPP_MACRO_ASSERT(dest != nullptr, "memcpy: dest cannot be null");
-    // MPP_MACRO_ASSERT(src != nullptr, "memcpy: src cannot be null");
-
-    auto* d = static_cast<unsigned char*>(dest);
-    const auto* s = static_cast<const unsigned char*>(src);
-
-    // Optimization: Copy by CPU architecture word size (4 or 8 bytes at a time)
-    while (n >= sizeof(size_t)) {
-        *reinterpret_cast<size_t*>(d) = *reinterpret_cast<const size_t*>(s);
-        d += sizeof(size_t);
-        s += sizeof(size_t);
-        n -= sizeof(size_t);
-    }
-
-    // Clean up remaining trailing bytes
-    while (n > 0) {
-        *d++ = *s++;
-        n--;
-    }
-
-    return dest;
-}
-
 /*
  * dlmalloc exports dlmalloc(), dlfree(), and dlrealloc() when USE_DL_PREFIX
  * is enabled. Keep those names separate from any platform-level malloc API.
  */
-#include "./dlmalloc_upstream.cpp"
+#include "./dlmalloc.hpp"
 
 /* wasm-ld defines __heap_base as the first address available to the heap. */
 #ifndef DLMALLOC_HEAP_BASE_ADDRESS
@@ -194,3 +125,19 @@ static void *wasm_morecore(ptrdiff_t increment)
     wasm_heap_break = new_break;
     return (void *)(uintptr_t)old_break;
 }
+
+PLATFORM_NAMESPACE_BEGIN
+
+void *malloc(size_t byte_size) {
+    return ::dlmalloc(byte_size);
+}
+
+void *realloc(void *ptr, size_t byte_size) {
+    return ::dlrealloc(ptr, byte_size);
+}
+
+void free(void *ptr) {
+    ::dlfree(ptr);
+}
+
+PLATFORM_NAMESPACE_END
